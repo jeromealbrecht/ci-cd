@@ -1,101 +1,103 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Search, RefreshCw, Star, GitFork, Users, BookOpen, ExternalLink, Github } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Search,
+  RefreshCw,
+  Star,
+  GitFork,
+  Users,
+  BookOpen,
+  ExternalLink,
+  Github,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+  GitHubRepo,
+  GitHubStatsProps,
+  GitHubUser,
+} from "@/interfaces/interfaces";
 
-interface GitHubUser {
-  login: string
-  name: string | null
-  avatar_url: string
-  html_url: string
-  public_repos: number
-  followers: number
-  following: number
-  bio: string | null
-  company: string | null
-  location: string | null
-  blog: string | null
-  created_at: string
-}
-
-interface GitHubRepo {
-  name: string
-  html_url: string
-  description: string | null
-  stargazers_count: number
-  forks_count: number
-  language: string | null
-}
-
-export default function GitHubStats() {
-  const [username, setUsername] = useState(process.env.NEXT_PUBLIC_GITHUB_USERNAME || "")
-  const [user, setUser] = useState<GitHubUser | null>(null)
-  const [repos, setRepos] = useState<GitHubRepo[]>([])
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+export default function GitHubStats({
+  username: initialUsername,
+}: GitHubStatsProps) {
+  const [username, setUsername] = useState(initialUsername);
+  const [user, setUser] = useState<GitHubUser | null>(null);
+  const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const fetchUserData = async (username: string) => {
-    if (!username) return
+    if (!username) return;
 
-    setLoading(true)
-    setError("")
-    setUser(null)
-    setRepos([])
+    setLoading(true);
+    setError("");
+    setUser(null);
+    setRepos([]);
 
     try {
       // Fetch user data
-      const userRes = await fetch(`https://api.github.com/users/${username}`)
+      const userRes = await fetch(`https://api.github.com/users/${username}`);
 
       if (!userRes.ok) {
         throw new Error(
-          userRes.status === 404 ? "Utilisateur introuvable" : "Erreur lors de la récupération des données",
-        )
+          userRes.status === 404
+            ? "Utilisateur introuvable"
+            : "Erreur lors de la récupération des données"
+        );
       }
 
-      const userData: GitHubUser = (await userRes.ok) ? await userRes.json() : null
-      setUser(userData)
+      const userData: GitHubUser = await userRes.json();
+      setUser(userData);
 
       // Fetch top repos
-      const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=stars&per_page=3`)
-      const reposData: GitHubRepo[] = (await reposRes.ok) ? await reposRes.json() : []
-      setRepos(reposData)
+      const reposRes = await fetch(
+        `https://api.github.com/users/${username}/repos?sort=stars&per_page=3`
+      );
+      const reposData: GitHubRepo[] = await reposRes.json();
+      setRepos(reposData);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message)
+        setError(err.message);
       } else {
-        setError("Une erreur inconnue est survenue")
+        setError("Une erreur inconnue est survenue");
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_GITHUB_USERNAME) {
-      fetchUserData(process.env.NEXT_PUBLIC_GITHUB_USERNAME)
+      fetchUserData(process.env.NEXT_PUBLIC_GITHUB_USERNAME);
     }
-  }, [])
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    fetchUserData(username)
-  }
+    e.preventDefault();
+    fetchUserData(username);
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
-  }
+    });
+  };
 
   return (
     <div className="w-full max-w-3xl mx-auto p-4">
@@ -196,7 +198,9 @@ export default function GitHubStats() {
                       transition={{ delay: 0.2 }}
                     >
                       {user.name || user.login}
-                      <span className="text-gray-400 text-sm font-normal">@{user.login}</span>
+                      <span className="text-gray-400 text-sm font-normal">
+                        @{user.login}
+                      </span>
                     </motion.h2>
 
                     {user.bio && (
@@ -217,16 +221,25 @@ export default function GitHubStats() {
                       transition={{ delay: 0.4 }}
                     >
                       {user.company && (
-                        <Badge variant="outline" className="border-gray-600 text-gray-300">
+                        <Badge
+                          variant="outline"
+                          className="border-gray-600 text-gray-300"
+                        >
                           {user.company}
                         </Badge>
                       )}
                       {user.location && (
-                        <Badge variant="outline" className="border-gray-600 text-gray-300">
+                        <Badge
+                          variant="outline"
+                          className="border-gray-600 text-gray-300"
+                        >
                           {user.location}
                         </Badge>
                       )}
-                      <Badge variant="outline" className="border-gray-600 text-gray-300">
+                      <Badge
+                        variant="outline"
+                        className="border-gray-600 text-gray-300"
+                      >
                         Membre depuis {formatDate(user.created_at)}
                       </Badge>
                     </motion.div>
@@ -270,7 +283,9 @@ export default function GitHubStats() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
                   >
-                    <h3 className="text-xl font-semibold mt-8 mb-4">Top Repositories</h3>
+                    <h3 className="text-xl font-semibold mt-8 mb-4">
+                      Top Repositories
+                    </h3>
                     <div className="space-y-4">
                       {repos.map((repo, index) => (
                         <motion.div
@@ -294,9 +309,17 @@ export default function GitHubStats() {
                                       <ExternalLink className="h-3 w-3 ml-1" />
                                     </a>
                                   </h4>
-                                  {repo.description && <p className="text-sm text-gray-300 mt-1">{repo.description}</p>}
+                                  {repo.description && (
+                                    <p className="text-sm text-gray-300 mt-1">
+                                      {repo.description}
+                                    </p>
+                                  )}
                                 </div>
-                                {repo.language && <Badge className="bg-gray-700">{repo.language}</Badge>}
+                                {repo.language && (
+                                  <Badge className="bg-gray-700">
+                                    {repo.language}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex gap-4 mt-3 text-sm text-gray-400">
                                 <div className="flex items-center">
@@ -325,16 +348,21 @@ export default function GitHubStats() {
                 className="text-center py-8"
               >
                 <Github className="h-16 w-16 mx-auto text-gray-600 mb-4" />
-                <p className="text-gray-400">Entrez un nom d'utilisateur GitHub pour afficher son profil</p>
+                <p className="text-gray-400">
+                  Entrez un nom d'utilisateur GitHub pour afficher son profil
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
         </CardContent>
 
         <CardFooter className="border-t border-gray-700 pt-4 text-gray-400 text-sm">
-          <p>Données fournies par l'API GitHub. Certaines limites de taux peuvent s'appliquer.</p>
+          <p>
+            Données fournies par l'API GitHub. Certaines limites de taux peuvent
+            s'appliquer.
+          </p>
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
