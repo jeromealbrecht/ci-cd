@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -37,6 +37,7 @@ import {
   WorkflowRun,
 } from "@/interfaces/interfaces";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export default function GitHubStats({
   username: initialUsername,
@@ -50,27 +51,30 @@ export default function GitHubStats({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchWorkflowRuns = async (repoName: string) => {
-    try {
-      const response = await fetch(
-        `https://api.github.com/repos/${username}/${repoName}/actions/runs?per_page=1`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.workflow_runs && data.workflow_runs.length > 0) {
-          setWorkflowRuns((prev) => ({
-            ...prev,
-            [repoName]: data.workflow_runs[0],
-          }));
+  const fetchWorkflowRuns = useCallback(
+    async (repoName: string) => {
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${username}/${repoName}/actions/runs?per_page=1`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.workflow_runs && data.workflow_runs.length > 0) {
+            setWorkflowRuns((prev) => ({
+              ...prev,
+              [repoName]: data.workflow_runs[0],
+            }));
+          }
         }
+      } catch (err) {
+        console.error(
+          `Erreur lors de la récupération des workflows pour ${repoName}:`,
+          err
+        );
       }
-    } catch (err) {
-      console.error(
-        `Erreur lors de la récupération des workflows pour ${repoName}:`,
-        err
-      );
-    }
-  };
+    },
+    [username]
+  );
 
   const getStatusIcon = (status: string, conclusion: string | null) => {
     if (status === "completed") {
@@ -101,7 +105,7 @@ export default function GitHubStats({
         return "✨ Pipeline CI/CD exécuté avec succès ! La qualité du code est maintenue.";
       }
       if (conclusion === "failure") {
-        return "🛠️ Notre CI est en cours d'ajustement pour intégrer les dernières optimisations.";
+        return "🛠️ Notre CI est en cours d&apos;ajustement pour intégrer les dernières optimisations.";
       }
       return "Pipeline terminé";
     }
@@ -163,7 +167,7 @@ export default function GitHubStats({
         fetchWorkflowRuns(repo.name);
       });
     }
-  }, [repos]);
+  }, [repos, fetchWorkflowRuns]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,11 +266,15 @@ export default function GitHubStats({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.1 }}
                   >
-                    <img
-                      src={user.avatar_url || "/placeholder.svg"}
-                      alt={`Avatar de ${user.login}`}
-                      className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-blue-500 shadow-lg"
-                    />
+                    <div className="relative w-24 h-24 md:w-32 md:h-32">
+                      <Image
+                        src={user.avatar_url || "/placeholder.svg"}
+                        alt={`Avatar de ${user.login}`}
+                        fill
+                        className="rounded-full border-4 border-blue-500 shadow-lg object-cover"
+                        priority
+                      />
+                    </div>
                   </motion.div>
 
                   <div className="flex-1 text-center md:text-left">
@@ -525,7 +533,8 @@ export default function GitHubStats({
               >
                 <Github className="h-16 w-16 mx-auto text-gray-600 mb-4" />
                 <p className="text-gray-400">
-                  Entrez un nom d'utilisateur GitHub pour afficher son profil
+                  Entrez un nom d&apos;utilisateur GitHub pour afficher son
+                  profil
                 </p>
               </motion.div>
             )}
@@ -534,8 +543,8 @@ export default function GitHubStats({
 
         <CardFooter className="border-t border-gray-700 pt-4 text-gray-400 text-sm">
           <p>
-            Données fournies par l'API GitHub. Certaines limites de taux peuvent
-            s'appliquer.
+            Données fournies par l&apos;API GitHub. Certaines limites de taux
+            peuvent s&apos;appliquer.
           </p>
         </CardFooter>
       </Card>
