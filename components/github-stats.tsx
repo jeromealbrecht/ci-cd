@@ -95,6 +95,22 @@ export default function GitHubStats({
     return "En attente";
   };
 
+  const getStatusMessage = (status: string, conclusion: string | null) => {
+    if (status === "completed") {
+      if (conclusion === "success") {
+        return "✨ Pipeline CI/CD exécuté avec succès ! La qualité du code est maintenue.";
+      }
+      if (conclusion === "failure") {
+        return "🛠️ Notre CI est en cours d'ajustement pour intégrer les dernières optimisations.";
+      }
+      return "Pipeline terminé";
+    }
+    if (status === "in_progress") {
+      return "🔄 Vérification de la qualité du code en cours...";
+    }
+    return "En attente de démarrage";
+  };
+
   const fetchUserData = async (username: string) => {
     if (!username) return;
 
@@ -432,6 +448,13 @@ export default function GitHubStats({
                                       )}
                                     </Badge>
                                   </div>
+
+                                  <p className="text-sm text-gray-300 mb-3">
+                                    {getStatusMessage(
+                                      workflowRuns[repo.name].status,
+                                      workflowRuns[repo.name].conclusion
+                                    )}
+                                  </p>
 
                                   <div className="text-xs text-gray-400">
                                     <div className="flex items-center gap-1 mb-1">
