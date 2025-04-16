@@ -1,38 +1,31 @@
-name: CI/CD
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
 jobs:
   build-and-test:
-    name: 🔧 Build, Lint & Test
+    name: Build, Lint & Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 🧱 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: "pnpm"
 
-      - name: 🟢 Setup pnpm
+      - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: pnpm install
 
-      - name: 🔍 Lint
+      - name: Lint
         run: pnpm lint
 
-      - name: 🧪 Run tests
+      - name: Run tests
         run: pnpm test
 
-      - name: 🏗️ Build app
+      - name: Build app
         run: pnpm build
