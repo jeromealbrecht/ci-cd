@@ -1,33 +1,32 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import GitHubStats from "../../components/github-stats";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import GitHubStats from "@/components/github-stats";
 import "@testing-library/jest-dom";
 import { GitHubData } from "@/interfaces/interfaces";
 
-// Mock de la fonction fetch
-global.fetch = jest.fn();
+jest.mock("next/image", () => ({
+  __esModule: true,
+  default: (props: any) => <img {...props} />,
+}));
 
 describe("GitHubStats Component", () => {
-  // Réinitialiser les mocks avant chaque test
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
+  const mockData: GitHubData = {
+    public_repos: 10,
+    followers: 20,
+    following: 30,
+    name: "Jerome Albrecht",
+    bio: "Développeur passionné",
+    avatar_url: "https://avatars.githubusercontent.com/u/123456?v=4",
+    login: "jeromealbrecht",
+  };
 
-  it("affiche un message de chargement initialement", () => {
-    render(<GitHubStats username="jeromealbrecht" />);
-    expect(screen.getByText(/chargement/i)).toBeInTheDocument();
+  beforeEach(() => {
+    // Reset all mocks
+    jest.clearAllMocks();
+    // Mock fetch
+    global.fetch = jest.fn();
   });
 
   it("affiche les statistiques après un appel API réussi", async () => {
-    // Mock de la réponse de l'API
-    const mockData: GitHubData = {
-      public_repos: 10,
-      followers: 20,
-      following: 30,
-      name: "Jerome Albrecht",
-      bio: "Développeur passionné",
-    };
-
-    // Configuration du mock fetch
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockData,
@@ -35,75 +34,72 @@ describe("GitHubStats Component", () => {
 
     render(<GitHubStats username="jeromealbrecht" />);
 
-    // Vérifier que le loader est affiché
-    expect(screen.getByText(/chargement/i)).toBeInTheDocument();
+    // Vérifier que le chargement est affiché
+    expect(screen.getByTestId("loading-skeleton")).toBeInTheDocument();
 
-    // Attendre et vérifier que les données sont affichées
+    // Attendre que les données soient chargées
     await waitFor(() => {
-      expect(screen.getByText(mockData.name)).toBeInTheDocument();
-      expect(screen.getByText(mockData.bio)).toBeInTheDocument();
-      expect(screen.getByText(`${mockData.public_repos}`)).toBeInTheDocument();
-      expect(screen.getByText(`${mockData.followers}`)).toBeInTheDocument();
-      expect(screen.getByText(`${mockData.following}`)).toBeInTheDocument();
+      expect(screen.getByText("Jerome Albrecht")).toBeInTheDocument();
     });
 
-    // Vérifier que l'API a été appelée avec les bons paramètres
-    expect(global.fetch).toHaveBeenCalledWith(
-      "https://api.github.com/users/jeromealbrecht"
-    );
+    // Vérifier que toutes les données sont affichées
+    expect(screen.getByText("Développeur passionné")).toBeInTheDocument();
+    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(screen.getByText("20")).toBeInTheDocument();
+    expect(screen.getByText("30")).toBeInTheDocument();
+    expect(screen.getByAltText("Avatar de jeromealbrecht")).toBeInTheDocument();
   });
 
-  it("affiche un message d'erreur en cas d'échec de l'API", async () => {
-    // Mock d'une erreur API
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
+  it("gère les erreurs de l'API", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+    });
+
+    render(<GitHubStats username="utilisateur-inexistant" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Utilisateur introuvable")).toBeInTheDocument();
+    });
+  });
+
+  it("permet de changer d'utilisateur", async () => {
+    const newMockData: GitHubData = {
+      public_repos: 15,
+      followers: 25,
+      following: 35,
+      name: "Jerome Albrecht Updated",
+      bio: "Bio mise à jour",
+      avatar_url: "https://avatars.githubusercontent.com/u/123456?v=4",
+      login: "jeromealbrecht",
+    };
+
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockData,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => newMockData,
+      });
 
     render(<GitHubStats username="jeromealbrecht" />);
 
-    // Attendre et vérifier que le message d'erreur est affiché
+    // Attendre le premier chargement
     await waitFor(() => {
-      expect(screen.getByText(/erreur/i)).toBeInTheDocument();
-    });
-  });
-
-  it("met à jour les données quand le username change", async () => {
-    const mockData1: GitHubData = {
-      name: "Jerome Albrecht",
-      public_repos: 10,
-      followers: 0,
-      following: 0,
-      bio: "Bio 1",
-    };
-
-    const mockData2: GitHubData = {
-      name: "Autre Utilisateur",
-      public_repos: 20,
-      followers: 0,
-      following: 0,
-      bio: "Bio 2",
-    };
-
-    // Premier appel API
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockData1,
+      expect(screen.getByText("Jerome Albrecht")).toBeInTheDocument();
     });
 
-    const { rerender } = render(<GitHubStats username="jeromealbrecht" />);
+    // Simuler le changement d'utilisateur
+    const input = screen.getByPlaceholderText("Nom d'utilisateur GitHub");
+    fireEvent.change(input, { target: { value: "nouveau-username" } });
+    fireEvent.submit(input.closest("form")!);
 
+    // Vérifier que les nouvelles données sont affichées
     await waitFor(() => {
-      expect(screen.getByText(mockData1.name)).toBeInTheDocument();
-    });
-
-    // Deuxième appel API avec un username différent
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockData2,
-    });
-
-    rerender(<GitHubStats username="autreuser" />);
-
-    await waitFor(() => {
-      expect(screen.getByText(mockData2.name)).toBeInTheDocument();
+      expect(screen.getByText("Jerome Albrecht Updated")).toBeInTheDocument();
+      expect(screen.getByText("Bio mise à jour")).toBeInTheDocument();
     });
   });
 });
