@@ -13,6 +13,11 @@ import {
   BookOpen,
   ExternalLink,
   Github,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  PlayCircle,
+  GitCommit,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,7 +34,9 @@ import {
   GitHubRepo,
   GitHubStatsProps,
   GitHubUser,
+  WorkflowRun,
 } from "@/interfaces/interfaces";
+import { cn } from "@/lib/utils";
 
 export default function GitHubStats({
   username: initialUsername,
@@ -37,8 +44,56 @@ export default function GitHubStats({
   const [username, setUsername] = useState(initialUsername);
   const [user, setUser] = useState<GitHubUser | null>(null);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [workflowRuns, setWorkflowRuns] = useState<Record<string, WorkflowRun>>(
+    {}
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const fetchWorkflowRuns = async (repoName: string) => {
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${username}/${repoName}/actions/runs?per_page=1`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.workflow_runs && data.workflow_runs.length > 0) {
+          setWorkflowRuns((prev) => ({
+            ...prev,
+            [repoName]: data.workflow_runs[0],
+          }));
+        }
+      }
+    } catch (err) {
+      console.error(
+        `Erreur lors de la récupération des workflows pour ${repoName}:`,
+        err
+      );
+    }
+  };
+
+  const getStatusIcon = (status: string, conclusion: string | null) => {
+    if (status === "completed") {
+      if (conclusion === "success") {
+        return <CheckCircle2 className="h-4 w-4 text-green-400" />;
+      } else if (conclusion === "failure") {
+        return <XCircle className="h-4 w-4 text-red-400" />;
+      }
+    } else if (status === "in_progress") {
+      return <PlayCircle className="h-4 w-4 text-blue-400 animate-pulse" />;
+    }
+    return <Clock className="h-4 w-4 text-gray-400" />;
+  };
+
+  const getStatusText = (status: string, conclusion: string | null) => {
+    if (status === "completed") {
+      if (conclusion === "success") return "Succès";
+      if (conclusion === "failure") return "Échec";
+      return "Terminé";
+    }
+    if (status === "in_progress") return "En cours";
+    return "En attente";
+  };
 
   const fetchUserData = async (username: string) => {
     if (!username) return;
@@ -85,6 +140,14 @@ export default function GitHubStats({
       fetchUserData(process.env.NEXT_PUBLIC_GITHUB_USERNAME);
     }
   }, []);
+
+  useEffect(() => {
+    if (repos.length > 0) {
+      repos.forEach((repo) => {
+        fetchWorkflowRuns(repo.name);
+      });
+    }
+  }, [repos]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -296,41 +359,131 @@ export default function GitHubStats({
                         >
                           <Card className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors">
                             <CardContent className="p-4">
-                              <div className="flex justify-between items-start">
-                                <div>
+                              <div className="flex justify-between items-center mb-3">
+                                <div className="flex items-center gap-2">
                                   <h4 className="font-medium text-blue-400">
                                     <a
                                       href={repo.html_url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex items-center hover:underline"
+                                      className="flex items-center gap-2 hover:underline"
                                     >
-                                      {repo.name}
-                                      <ExternalLink className="h-3 w-3 ml-1" />
+                                      <span className="capitalize inline-block w-fit px-2 py-0.5 bg-gray-700/50 rounded text-sm">
+                                        {repo.name.replace(/-/g, " ")}
+                                      </span>
+                                      <ExternalLink className="h-3 w-3" />
                                     </a>
                                   </h4>
-                                  {repo.description && (
-                                    <p className="text-sm text-gray-300 mt-1">
-                                      {repo.description}
-                                    </p>
+                                  {repo.language && (
+                                    <Badge className="bg-gray-700 capitalize">
+                                      {repo.language}
+                                    </Badge>
                                   )}
                                 </div>
-                                {repo.language && (
-                                  <Badge className="bg-gray-700">
-                                    {repo.language}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex gap-4 mt-3 text-sm text-gray-400">
-                                <div className="flex items-center">
-                                  <Star className="h-4 w-4 mr-1 text-yellow-400" />
-                                  {repo.stargazers_count}
-                                </div>
-                                <div className="flex items-center">
-                                  <GitFork className="h-4 w-4 mr-1 text-blue-400" />
-                                  {repo.forks_count}
+                                <div className="flex gap-4 text-sm text-gray-400">
+                                  <div className="flex items-center">
+                                    <Star className="h-4 w-4 mr-1 text-yellow-400" />
+                                    {repo.stargazers_count}
+                                  </div>
+                                  <div className="flex items-center">
+                                    <GitFork className="h-4 w-4 mr-1 text-blue-400" />
+                                    {repo.forks_count}
+                                  </div>
                                 </div>
                               </div>
+
+                              {repo.description && (
+                                <p className="text-sm text-gray-300 mb-3">
+                                  {repo.description}
+                                </p>
+                              )}
+
+                              {workflowRuns[repo.name] && (
+                                <div className="p-3 bg-gray-900 rounded-md">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      {getStatusIcon(
+                                        workflowRuns[repo.name].status,
+                                        workflowRuns[repo.name].conclusion
+                                      )}
+                                      <span className="text-sm font-medium">
+                                        {workflowRuns[repo.name].name ||
+                                          "CI/CD"}
+                                      </span>
+                                    </div>
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        "text-xs",
+                                        workflowRuns[repo.name].conclusion ===
+                                          "success" &&
+                                          "border-green-500 text-green-400",
+                                        workflowRuns[repo.name].conclusion ===
+                                          "failure" &&
+                                          "border-red-500 text-red-400",
+                                        workflowRuns[repo.name].status ===
+                                          "in_progress" &&
+                                          "border-blue-500 text-blue-400"
+                                      )}
+                                    >
+                                      {getStatusText(
+                                        workflowRuns[repo.name].status,
+                                        workflowRuns[repo.name].conclusion
+                                      )}
+                                    </Badge>
+                                  </div>
+
+                                  <div className="text-xs text-gray-400">
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <GitFork className="h-3 w-3" />
+                                      <span>
+                                        {workflowRuns[repo.name].head_branch}
+                                      </span>
+                                    </div>
+                                    {workflowRuns[repo.name].head_commit && (
+                                      <div className="flex items-start gap-1">
+                                        <span className="text-gray-500 mt-1">
+                                          <GitCommit className="h-3 w-3" />
+                                        </span>
+                                        <div>
+                                          <div className="line-clamp-2">
+                                            {
+                                              workflowRuns[repo.name]
+                                                .head_commit.message
+                                            }
+                                          </div>
+                                          <div className="text-gray-500 mt-1">
+                                            par{" "}
+                                            {
+                                              workflowRuns[repo.name]
+                                                .head_commit.author.name
+                                            }{" "}
+                                            •{" "}
+                                            {new Date(
+                                              workflowRuns[repo.name].created_at
+                                            ).toLocaleDateString("fr-FR", {
+                                              day: "numeric",
+                                              month: "short",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <a
+                                    href={workflowRuns[repo.name].html_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                                  >
+                                    Voir les détails
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              )}
                             </CardContent>
                           </Card>
                         </motion.div>
