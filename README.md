@@ -4,6 +4,8 @@
 
 [Voir la démo en ligne](https://ci-cd-tau-one.vercel.app/)
 
+![Aperçu de l'application](/public/preview.png)
+
 GitHub Stats Dashboard est une application web développée avec Next.js et TypeScript permettant de visualiser les statistiques publiques d'un profil GitHub, ainsi que ses dépôts les plus actifs.
 
 Ce projet met en œuvre une architecture moderne avec des tests automatisés, un pipeline CI/CD via GitHub Actions, une configuration ESLint stricte et un usage optimisé de `pnpm` pour la gestion des dépendances.
