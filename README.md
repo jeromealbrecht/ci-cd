@@ -2,47 +2,40 @@
 
 ![CI/CD](https://github.com/jeromealbrecht/ci-cd/actions/workflows/ci-cd.yml/badge.svg)
 
-[Voir la démo en ligne](https://ci-cd-tau-one.vercel.app/)
+[View Live Demo](https://ci-cd-tau-one.vercel.app/)
 
-![Aperçu de l'application](/public/preview.png)
+![App Preview](/public/preview.png)
 
-GitHub Stats Dashboard est une application web développée avec Next.js et TypeScript permettant de visualiser les statistiques publiques d'un profil GitHub, ainsi que ses dépôts les plus actifs.
+**GitHub Stats Dashboard** is a web application built with **Next.js** and **TypeScript**, designed to display public statistics from any GitHub profile along with their most active repositories.
 
-Ce projet met en œuvre une architecture moderne avec des tests automatisés, un pipeline CI/CD via GitHub Actions, une configuration ESLint stricte et un usage optimisé de `pnpm` pour la gestion des dépendances.
+This project implements a **modern architecture** with automated testing, a **CI/CD pipeline** using GitHub Actions, strict **ESLint configuration**, and efficient dependency management through `pnpm`.
 
-## Fonctionnalités
+---
 
-- Consultation du profil GitHub (nom, bio, date d'inscription, avatar)
-- Statistiques principales : nombre de dépôts, followers, following
-- Liste des dépôts publics les plus récents
-- Intégration avec l'API GitHub (v3)
-- Pipeline CI/CD : lint, test, build automatisé à chaque push
-- Structure évolutive basée sur App Router (Next.js)
+## Features
 
-## Stack technique
+- View GitHub profile (name, bio, join date, avatar)
+- Display key stats: repositories, followers, following
+- List of most recent public repositories
+- Integration with the **GitHub REST API (v3)**
+- **Automated CI/CD pipeline** (lint, test, build on each push)
+- Scalable structure using **App Router (Next.js 14)**
 
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- ESLint (flat config)
-- GitHub Actions (CI/CD)
-- pnpm
+---
+
+## Tech Stack
+
+- **Next.js 14**
+- **TypeScript**
+- **Tailwind CSS**
+- **ESLint** (flat config)
+- **GitHub Actions** (CI/CD)
+- **pnpm**
+
+---
 
 ## Installation
 
 ```bash
 pnpm install
 pnpm dev
-```
-
-## Lint et tests
-
-```bash
-pnpm lint        # Analyse du code
-pnpm lint:fix    # Correction automatique
-pnpm test        # Tests unitaires
-```
-
-## Déploiement
-
-Ce projet peut être déployé sur Vercel, Netlify ou toute plateforme supportant Next.js.
